@@ -10,6 +10,11 @@ type NodeStringer interface {
 	NodeString() string
 }
 
+var (
+	attrOverflow    = Text(`this node has over than 128 attribute.`)
+	contentOverflow = Text(`this node has over then 256 contents.`)
+)
+
 type attrNode [128]string
 
 func (a attrNode) String() string {
@@ -59,6 +64,14 @@ func Node(tag string, contains ...NodeStringer) NodeStringer {
 	}
 
 	for _, val := range contains {
+		if n.aIdx >= 128 {
+			return attrOverflow
+		}
+
+		if n.tIdx >= 256 {
+			return contentOverflow
+		}
+
 		if k, ok := val.(attr); ok {
 			n.attrs[n.aIdx] = k.NodeString()
 			n.aIdx++
