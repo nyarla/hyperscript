@@ -6,10 +6,9 @@ import (
 )
 
 func ExampleNode() {
-	node := Node(`a`, Text(`link`), Attr(`href`, `https://example.com`))
+	node := Node(`a`, Text(`link`), Attr(`href`, `https://example.com`)).NodeString()
 
-	fmt.Println(node.NodeString())
-
+	fmt.Println(node)
 	// Output:
 	// <a href="https://example.com">link</a>
 }

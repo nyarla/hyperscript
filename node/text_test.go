@@ -6,30 +6,28 @@ import (
 )
 
 func ExampleText() {
-	text := Text(`<p>`)
+	text := Text(`<p>`).NodeString()
 
 	fmt.Println(text)
-
 	// Output:
 	// &lt;p&gt;
 }
 
 func BenchmarkText(b *testing.B) {
 	for idx := 0; idx < b.N; idx++ {
-		Text(`<p>`)
+		Text(`<p>`).NodeString()
 	}
 }
 
 func ExampleRaw() {
-	raw := Raw(`<hr />`)
+	raw := Raw(`<hr />`).NodeString()
 	fmt.Println(raw)
-
 	// Output:
 	// <hr />
 }
 
 func BenchmarkRaw(b *testing.B) {
 	for idx := 0; idx < b.N; idx++ {
-		Raw(`<hr />`)
+		Raw(`<hr />`).NodeString()
 	}
 }
