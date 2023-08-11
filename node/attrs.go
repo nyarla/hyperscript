@@ -18,6 +18,7 @@ func (a attr) NodeString() string {
 	return a[0]
 }
 
+// Attr returns string of html attribute like as `id="foo"`
 func Attr(k, v string) NodeStringer {
 	kv := kv{k, v}
 

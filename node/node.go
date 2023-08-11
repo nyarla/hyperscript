@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// NodeStringer is interface for generates a parts of html string.
 type NodeStringer interface {
 	NodeString() string
 }
@@ -47,6 +48,7 @@ func (n node) NodeString() string {
 
 var nodes = make(map[node]NodeStringer)
 
+// Node returns html string as NodeStringer
 func Node(tag string, contains ...NodeStringer) NodeStringer {
 	n := node{
 		tag:   tag,
