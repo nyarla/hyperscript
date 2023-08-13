@@ -87,7 +87,7 @@ func Node(tag string, contains ...NodeStringer) NodeStringer {
 	}
 
 	if len(contents) == 0 {
-		inMemoryNodeCache[key] = rawStr(fmt.Sprintf(`<%s%s/>`, tag, attrs))
+		inMemoryNodeCache[key] = rawStr(fmt.Sprintf(`<%s%s />`, tag, attrs))
 	} else {
 		inMemoryNodeCache[key] = rawStr(fmt.Sprintf(`<%s%s>%s</%s>`, tag, attrs, contents, tag))
 	}
