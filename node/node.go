@@ -1,93 +1,41 @@
 package node
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // NodeStringer is interface for generates a parts of html string.
 type NodeStringer interface {
 	NodeString() string
 }
 
-var (
-	attrOverflow    = Text(`this node has over than 128 attribute.`)
-	contentOverflow = Text(`this node has over then 256 contents.`)
-)
-
-type attrNode [128]string
-
-func (a attrNode) String() string {
-	return strings.Join(a[:], ``)
-}
-
-type textNode [256]string
-
-func (t textNode) String() string {
-	return strings.Join(t[:], ``)
-}
-
-type node struct {
-	tag   string
-	attrs attrNode
-	texts textNode
-	aIdx  int
-	tIdx  int
-}
-
-func (n node) NodeString() string {
-	if n.tIdx == 0 && n.aIdx == 0 {
-		return fmt.Sprintf(`<%s />`, n.tag)
-	}
-
-	if n.tIdx == 0 {
-		return fmt.Sprintf(`<%s %s/>`, n.tag, n.attrs.String())
-	}
-
-	if n.aIdx == 0 {
-		return fmt.Sprintf(`<%s>%s</%s>`, n.tag, n.texts.String(), n.tag)
-	}
-
-	return fmt.Sprintf(`<%s%s>%s</%s>`, n.tag, n.attrs.String(), n.texts.String(), n.tag)
-}
+type node [3]string
 
 var nodes = make(map[node]NodeStringer)
 
-// Node returns html string as NodeStringer
 func Node(tag string, contains ...NodeStringer) NodeStringer {
-	n := node{
-		tag:   tag,
-		attrs: [128]string{},
-		texts: [256]string{},
-		aIdx:  0,
-		tIdx:  0,
-	}
+	var (
+		a, c string
+	)
 
-	for _, val := range contains {
-		if n.aIdx >= 128 {
-			return attrOverflow
-		}
-
-		if n.tIdx >= 256 {
-			return contentOverflow
-		}
-
-		if k, ok := val.(attr); ok {
-			n.attrs[n.aIdx] = k.NodeString()
-			n.aIdx++
-
+	for _, content := range contains {
+		if data, ok := content.(attr); ok {
+			a += data.NodeString()
 			continue
 		}
 
-		n.texts[n.tIdx] = val.NodeString()
-		n.tIdx++
+		c += content.NodeString()
 	}
 
-	if data, ok := nodes[n]; ok {
+	var node = [3]string{tag, a, c}
+
+	if data, ok := nodes[node]; ok {
 		return data
 	}
 
-	nodes[n] = raw(n.NodeString())
+	if len(c) == 0 {
+		nodes[node] = raw(fmt.Sprintf(`<%s%s/>`, tag, a))
+	}
 
-	return nodes[n]
+	nodes[node] = raw(fmt.Sprintf(`<%s%s>%s</%s>`, tag, a, c, tag))
+
+	return nodes[node]
 }
