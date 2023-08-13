@@ -5,6 +5,8 @@ import (
 	"html"
 )
 
+// NodeStringer is a interface of Text, Attribute or Node instances.
+// This interface always use inside this library.
 type NodeStringer interface {
 	NodeString() string
 }
@@ -27,6 +29,8 @@ func (s rawStr) NodeString() string {
 	return string(s)
 }
 
+// Raw returns a non-escaped text as it.
+// This function should not use to a untrusted html string.
 func Raw(src string) NodeStringer {
 	if data, ok := inMemoryRawCache[src]; ok {
 		return data
@@ -37,6 +41,7 @@ func Raw(src string) NodeStringer {
 	return inMemoryRawCache[src]
 }
 
+// Text returns html-escaped text as NodeStringer.
 func Text(src string) NodeStringer {
 	if data, ok := inMemoryHTMLCache[src]; ok {
 		return data
@@ -55,6 +60,7 @@ func (ra rawAttr) NodeString() string {
 	return ra[0]
 }
 
+// Attr returns html tag's attribute pair like as `id="foo"`.
 func Attr(k, v string) NodeStringer {
 	key := keyAttr{k, v}
 
@@ -67,6 +73,7 @@ func Attr(k, v string) NodeStringer {
 	return inMemoryAttrCache[key]
 }
 
+// Node construct html tags by tag string and NodeStringers (Attr, Text or Raw functions makes it)
 func Node(tag string, contains ...NodeStringer) NodeStringer {
 	var (
 		attrs, contents string
