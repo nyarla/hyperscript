@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func TestRaw(t *testing.T) {
+func TestUnsafe(t *testing.T) {
 	var out strings.Builder
-	var component = Raw(`text`)
+	var component = Unsafe(`text`)
 	var expect = `text`
 
 	if _, err := component.WriteNode(&out); err != nil {
@@ -21,7 +21,7 @@ func TestRaw(t *testing.T) {
 	}
 }
 
-func TestText(t *testing.T) {
+func TestSafe(t *testing.T) {
 	var out strings.Builder
 	var tests = [][2]string{
 		{`&amp;`, `&`},
@@ -40,7 +40,7 @@ func TestText(t *testing.T) {
 		raw := test[1]
 		escaped := test[0]
 
-		component := Text(raw)
+		component := Safe(raw)
 
 		if _, err := component.WriteNode(&out); err != nil {
 			t.Errorf(`failed to write component string: %+v`, err)
@@ -126,9 +126,9 @@ func TestElement(t *testing.T) {
 		{Element(`hr`), `<hr />`},
 		{Element(`hr`, Attr(`id`, `msg`)), `<hr id="msg" />`},
 		{Element(`hr`, Attr(`id`, `msg`), Attr(`class`, `hr`)), `<hr class="hr" id="msg" />`},
-		{Element(`p`, Text(`hello`), Text(`, `), Text(`world!`)), `<p>hello, world!</p>`},
-		{Element(`p`, Attr(`id`, `msg`), Attr(`class`, `highlight`), Text(`hello`), Text(`, `), Text(`world!`)), `<p class="highlight" id="msg">hello, world!</p>`},
-		{Element(`p`, Element(`strong`, Text(`hi,`))), `<p><strong>hi,</strong></p>`},
+		{Element(`p`, Safe(`hello`), Safe(`, `), Safe(`world!`)), `<p>hello, world!</p>`},
+		{Element(`p`, Attr(`id`, `msg`), Attr(`class`, `highlight`), Safe(`hello`), Safe(`, `), Safe(`world!`)), `<p class="highlight" id="msg">hello, world!</p>`},
+		{Element(`p`, Element(`strong`, Safe(`hi,`))), `<p><strong>hi,</strong></p>`},
 	}
 
 	for _, test := range tests {
@@ -147,9 +147,9 @@ func TestElement(t *testing.T) {
 	}
 }
 
-func BenchmarkRaw(b *testing.B) {
+func BenchmarkUnsafe(b *testing.B) {
 	var out strings.Builder
-	var component = Raw(`test`)
+	var component = Unsafe(`test`)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -159,9 +159,9 @@ func BenchmarkRaw(b *testing.B) {
 	}
 }
 
-func BenchmarkText(b *testing.B) {
+func BenchmarkSafe(b *testing.B) {
 	var out strings.Builder
-	var component = Text(`test`)
+	var component = Safe(`test`)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -187,7 +187,7 @@ func BenchmarkAttr(b *testing.B) {
 
 func BenchmarkElement(b *testing.B) {
 	var out strings.Builder
-	var p = Element(`p`, Element(`strong`, Text(`hi, `), Text(`this is test message.`)))
+	var p = Element(`p`, Element(`strong`, Safe(`hi, `), Safe(`this is test message.`)))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -201,12 +201,13 @@ func BenchmarkRealCase(b *testing.B) {
 	var out strings.Builder
 	var t = Element(`html`,
 		Element(`body`,
-			Element(`h1`, Text(`title`)),
-			Element(`p`, Text(`This is an example page!`)),
+			Element(`h1`, Safe(`title`)),
+			Element(`p`, Safe(`This is an example page!`)),
 			Element(`ul`,
-				Element(`li`, Text(`foo`),
-					Element(`li`, Text(`bar`),
-						Element(`li`, Text(`baz`)))))))
+				Element(`li`, Safe(`foo`)),
+				Element(`li`, Safe(`bar`)),
+				Element(`li`, Safe(`baz`)),
+				Element(`hr`))))
 
 	b.ReportAllocs()
 	b.ResetTimer()

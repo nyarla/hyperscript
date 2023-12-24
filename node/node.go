@@ -41,7 +41,7 @@ func (f ElementNodeWriterFunc) WriteNode(w *strings.Builder) (int, error) {
 	return f(w)
 }
 
-func Raw(src string) NodeWriter {
+func Unsafe(src string) NodeWriter {
 	return TextNodeWriterFunc(func(w *strings.Builder) (int, error) {
 		return w.WriteString(src)
 	})
@@ -58,7 +58,7 @@ var htmlReplacer = strings.NewReplacer(
 	`}`, `&#125;`,
 )
 
-func Text(src string) NodeWriter {
+func Safe(src string) NodeWriter {
 	return TextNodeWriterFunc(func(w *strings.Builder) (int, error) {
 		return htmlReplacer.WriteString(w, src)
 	})
