@@ -13,6 +13,8 @@ const (
 	ElementNode
 )
 
+type Tag string
+
 type NodeWriter interface {
 	Type() NodeType
 	WriteNode(w *strings.Builder) (int, error)
@@ -131,7 +133,7 @@ func (a ByNodeType) Less(i, j int) bool {
 	return i < j
 }
 
-func Element(el string, contains ...NodeWriter) NodeWriter {
+func Element(el Tag, contains ...NodeWriter) NodeWriter {
 	sort.Sort(ByNodeType(contains))
 	return ElementNodeWriterFunc(func(w *strings.Builder) (total int, throw error) {
 		var (
@@ -148,7 +150,7 @@ func Element(el string, contains ...NodeWriter) NodeWriter {
 		}
 
 		// write tag name
-		count, err = htmlReplacer.WriteString(w, el)
+		count, err = w.WriteString(string(el))
 		total += count
 		if err != nil {
 			throw = err
@@ -203,7 +205,7 @@ func Element(el string, contains ...NodeWriter) NodeWriter {
 			return
 		}
 
-		count, err = htmlReplacer.WriteString(w, el)
+		count, err = w.WriteString(string(el))
 		total += count
 		if err != nil {
 			throw = err

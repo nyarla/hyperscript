@@ -124,11 +124,9 @@ func TestElement(t *testing.T) {
 		expect string
 	}{
 		{Element(`hr`), `<hr />`},
-		{Element(`h&r`), `<h&amp;r />`},
 		{Element(`hr`, Attr(`id`, `msg`)), `<hr id="msg" />`},
 		{Element(`hr`, Attr(`id`, `msg`), Attr(`class`, `hr`)), `<hr class="hr" id="msg" />`},
 		{Element(`p`, Text(`hello`), Text(`, `), Text(`world!`)), `<p>hello, world!</p>`},
-		{Element(`p&p`, Text(`hello`), Text(`, `), Text(`world!`)), `<p&amp;p>hello, world!</p&amp;p>`},
 		{Element(`p`, Attr(`id`, `msg`), Attr(`class`, `highlight`), Text(`hello`), Text(`, `), Text(`world!`)), `<p class="highlight" id="msg">hello, world!</p>`},
 		{Element(`p`, Element(`strong`, Text(`hi,`))), `<p><strong>hi,</strong></p>`},
 	}
