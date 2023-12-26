@@ -59,8 +59,9 @@ var htmlReplacer = strings.NewReplacer(
 )
 
 func Safe(src string) NodeBuilder {
+	src = htmlReplacer.Replace(src)
 	return TextNodeBuilderFunc(func(w *strings.Builder) (int, error) {
-		return htmlReplacer.WriteString(w, src)
+		return w.WriteString(src)
 	})
 }
 
