@@ -77,16 +77,13 @@ func Attr(kv ...string) NodeBuilder {
 		panic(`node.Attr: odd argument count`)
 	}
 
-	for i, val := range kv {
-		if i%2 == 0 {
-			kv[i] = htmlReplacer.Replace(val) + `="`
-			continue
-		}
+	for idx := 0; idx < len(kv); idx = idx + 2 {
+		kv[idx] = htmlReplacer.Replace(kv[idx]) + `="`
 
-		if i == len(kv)-1 {
-			kv[i] = htmlReplacer.Replace(val) + `"`
+		if idx+1 == len(kv)-1 {
+			kv[idx+1] = htmlReplacer.Replace(kv[idx+1]) + `"`
 		} else {
-			kv[i] = htmlReplacer.Replace(val) + `" `
+			kv[idx+1] = htmlReplacer.Replace(kv[idx+1]) + `" `
 		}
 	}
 
