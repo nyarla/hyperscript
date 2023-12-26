@@ -1,0 +1,11 @@
+goos: linux
+goarch: amd64
+pkg: github.com/nyarla/hyperscript/node
+cpu: AMD Ryzen 9 3950X 16-Core Processor            
+BenchmarkUnsafe-32      	100000000	        11.23 ns/op	      23 B/op	       0 allocs/op
+BenchmarkSafe-32        	58616480	        20.69 ns/op	      20 B/op	       0 allocs/op
+BenchmarkAttr-32        	15644940	        88.32 ns/op	      96 B/op	       0 allocs/op
+BenchmarkElement-32     	 7733230	       195.3 ns/op	     303 B/op	       0 allocs/op
+BenchmarkRealCase-32    	 1917531	       692.3 ns/op	     783 B/op	       0 allocs/op
+PASS
+ok  	github.com/nyarla/hyperscript/node	7.505s

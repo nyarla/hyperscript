@@ -11,7 +11,7 @@ func TestUnsafe(t *testing.T) {
 	var component = Unsafe(`text`)
 	var expect = `text`
 
-	if _, err := component.WriteNode(&out); err != nil {
+	if _, err := component.BuildNode(&out); err != nil {
 		t.Errorf(`failed to write component string: %+v`, err)
 		return
 	}
@@ -42,7 +42,7 @@ func TestSafe(t *testing.T) {
 
 		component := Safe(raw)
 
-		if _, err := component.WriteNode(&out); err != nil {
+		if _, err := component.BuildNode(&out); err != nil {
 			t.Errorf(`failed to write component string: %+v`, err)
 			continue
 		}
@@ -77,7 +77,7 @@ func TestAttr(t *testing.T) {
 
 		component := Attr(from)
 
-		_, err := component.WriteNode(&out)
+		_, err := component.BuildNode(&out)
 		if err != nil {
 			t.Errorf(`failed to write component string: %+v`, err)
 			continue
@@ -104,7 +104,7 @@ func TestAttr(t *testing.T) {
 		expect := test[2]
 
 		component := Attr(k, v)
-		_, err := component.WriteNode(&out)
+		_, err := component.BuildNode(&out)
 		if err != nil {
 			t.Errorf(`failed to write component string: %+v`, err)
 			continue
@@ -120,7 +120,7 @@ func TestAttr(t *testing.T) {
 func TestElement(t *testing.T) {
 	var out strings.Builder
 	var tests = []struct {
-		el     NodeWriter
+		el     NodeBuilder
 		expect string
 	}{
 		{Element(`hr`), `<hr />`},
@@ -136,7 +136,7 @@ func TestElement(t *testing.T) {
 		el := test.el
 		expect := test.expect
 
-		if _, err := el.WriteNode(&out); err != nil {
+		if _, err := el.BuildNode(&out); err != nil {
 			t.Errorf(`failed to write component string: %+v`, err)
 			continue
 		}
@@ -155,7 +155,7 @@ func BenchmarkUnsafe(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		component.WriteNode(&out)
+		component.BuildNode(&out)
 	}
 }
 
@@ -167,7 +167,7 @@ func BenchmarkSafe(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		component.WriteNode(&out)
+		component.BuildNode(&out)
 	}
 }
 
@@ -180,8 +180,8 @@ func BenchmarkAttr(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		single.WriteNode(&out)
-		pair.WriteNode(&out)
+		single.BuildNode(&out)
+		pair.BuildNode(&out)
 	}
 }
 
@@ -193,7 +193,7 @@ func BenchmarkElement(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		p.WriteNode(&out)
+		p.BuildNode(&out)
 	}
 }
 
@@ -213,6 +213,6 @@ func BenchmarkRealCase(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		t.WriteNode(&out)
+		t.BuildNode(&out)
 	}
 }
