@@ -59,15 +59,17 @@ var htmlReplacer = strings.NewReplacer(
 )
 
 func Safe(src string) NodeBuilder {
+	src = htmlReplacer.Replace(src)
 	return TextNodeBuilderFunc(func(w *strings.Builder) (int, error) {
-		return htmlReplacer.WriteString(w, src)
+		return w.WriteString(src)
 	})
 }
 
 func Attr(kv ...string) NodeBuilder {
 	if len(kv) == 1 {
+		kv[0] = htmlReplacer.Replace(kv[0])
 		return AttrNodeBuilderFunc(func(w *strings.Builder) (int, error) {
-			return htmlReplacer.WriteString(w, kv[0])
+			return w.WriteString(kv[0])
 		})
 	}
 
@@ -75,49 +77,19 @@ func Attr(kv ...string) NodeBuilder {
 		panic(`node.Attr: odd argument count`)
 	}
 
-	return AttrNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
-		for idx := 0; idx < len(kv); idx = idx + 2 {
-			var (
-				count int
-				err   error
-			)
+	for idx := 0; idx < len(kv); idx = idx + 2 {
+		kv[idx] = htmlReplacer.Replace(kv[idx]) + `="`
 
-			count, err = htmlReplacer.WriteString(w, kv[idx])
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
-
-			count, err = w.WriteString(`=`)
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
-			count, err = w.WriteString(`"`)
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
-
-			count, err = htmlReplacer.WriteString(w, kv[idx+1])
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
-
-			count, err = w.WriteString(`"`)
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
+		if idx+1 == len(kv)-1 {
+			kv[idx+1] = htmlReplacer.Replace(kv[idx+1]) + `"`
+		} else {
+			kv[idx+1] = htmlReplacer.Replace(kv[idx+1]) + `" `
 		}
+	}
 
-		return
+	kv[0] = strings.Join(kv, "")
+	return AttrNodeBuilderFunc(func(w *strings.Builder) (int, error) {
+		return w.WriteString(kv[0])
 	})
 }
 
@@ -134,59 +106,28 @@ func (a ByNodeType) Less(i, j int) bool {
 }
 
 func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
-	sort.Sort(ByNodeType(contains))
-	return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
-		var (
-			count int
-			err   error
-		)
+	// element has no contents
+	if len(contains) == 0 {
+		return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
+			var (
+				count int
+				err   error
+			)
 
-		// begin tag start
-		count, err = w.WriteString(`<`)
-		total += count
-		if err != nil {
-			throw = err
-			return
-		}
-
-		// write tag name
-		count, err = w.WriteString(string(el))
-		total += count
-		if err != nil {
-			throw = err
-			return
-		}
-
-		// write contains
-		for idx, contain := range contains {
-			if (idx == 0 && contain.Type() == TextNode || contain.Type() == ElementNode) || (idx > 0 && contains[idx-1].Type() == AttrNode && (contain.Type() == TextNode || contain.Type() == ElementNode)) {
-				count, err = w.WriteString(`>`)
-				total += count
-				if err != nil {
-					throw = err
-					return
-				}
-			}
-
-			if contain.Type() == AttrNode {
-				count, err = w.WriteString(` `)
-				total += count
-				if err != nil {
-					throw = err
-					return
-				}
-			}
-
-			count, err = contain.BuildNode(w)
+			count, err = w.WriteString(`<`)
 			total += count
 			if err != nil {
 				throw = err
 				return
 			}
-		}
 
-		// close tag if content is empty
-		if len(contains) == 0 || contains[len(contains)-1].Type() == AttrNode {
+			count, err = w.WriteString(string(el))
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
 			count, err = w.WriteString(` />`)
 			total += count
 			if err != nil {
@@ -195,9 +136,278 @@ func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
 			}
 
 			return
+		})
+	}
+
+	// element has one attribute
+	if len(contains) == 1 && contains[0].Type() == AttrNode {
+		return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
+			var (
+				count int
+				err   error
+			)
+
+			count, err = w.WriteString(`<`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(string(el))
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(` `)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = contains[0].BuildNode(w)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(` />`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			return
+		})
+	}
+
+	// element has one content
+	if len(contains) == 1 && contains[0].Type() == TextNode || contains[0].Type() == ElementNode {
+		return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
+			var (
+				count int
+				err   error
+			)
+
+			count, err = w.WriteString(`<`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(string(el))
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(`>`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = contains[0].BuildNode(w)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(`</`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(string(el))
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(`>`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			return
+		})
+	}
+
+	sort.Sort(ByNodeType(contains))
+
+	// element has attributes without content
+	if contains[0].Type() == AttrNode && contains[len(contains)-1].Type() == AttrNode {
+		return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
+			var (
+				count int
+				err   error
+			)
+
+			count, err = w.WriteString(`<`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(string(el))
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			for idx := 0; idx < len(contains); idx++ {
+				count, err = w.WriteString(` `)
+				total += count
+				if err != nil {
+					throw = err
+					return
+				}
+				count, err = contains[idx].BuildNode(w)
+				total += count
+				if err != nil {
+					throw = err
+					return
+				}
+			}
+
+			// close tag
+			count, err = w.WriteString(` />`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			return
+		})
+	}
+
+	// element has contents without attribute
+	if (contains[0].Type() == TextNode || contains[0].Type() == ElementNode) && (contains[len(contains)-1].Type() == TextNode || contains[len(contains)-1].Type() == ElementNode) {
+		return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
+			var (
+				count int
+				err   error
+			)
+
+			count, err = w.WriteString(`<`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(string(el))
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+			count, err = w.WriteString(`>`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			for idx := 0; idx < len(contains); idx++ {
+				count, err = contains[idx].BuildNode(w)
+				total += count
+				if err != nil {
+					throw = err
+					return
+				}
+			}
+
+			count, err = w.WriteString(`</`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			count, err = w.WriteString(string(el))
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+			count, err = w.WriteString(`>`)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+
+			return
+		})
+	}
+
+	// element has attributes and contents
+	return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
+		var (
+			count int
+			err   error
+		)
+
+		// open tag
+		count, err = w.WriteString(`<`)
+		total += count
+		if err != nil {
+			throw = err
+			return
 		}
 
-		// close tag
+		count, err = w.WriteString(string(el))
+		total += count
+		if err != nil {
+			throw = err
+			return
+		}
+
+		for idx := 0; idx < len(contains); idx++ {
+			if idx == 0 || contains[idx].Type() == AttrNode {
+				count, err = w.WriteString(` `)
+				total += count
+				if err != nil {
+					throw = err
+					return
+				}
+			}
+
+			if idx > 0 && contains[idx-1].Type() == AttrNode && (contains[idx].Type() == TextNode || contains[idx].Type() == ElementNode) {
+				count, err = w.WriteString(`>`)
+				total += count
+				if err != nil {
+					throw = err
+					return
+				}
+			}
+
+			count, err = contains[idx].BuildNode(w)
+			total += count
+			if err != nil {
+				throw = err
+				return
+			}
+		}
+
 		count, err = w.WriteString(`</`)
 		total += count
 		if err != nil {
