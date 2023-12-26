@@ -67,8 +67,9 @@ func Safe(src string) NodeBuilder {
 
 func Attr(kv ...string) NodeBuilder {
 	if len(kv) == 1 {
+		kv[0] = htmlReplacer.Replace(kv[0])
 		return AttrNodeBuilderFunc(func(w *strings.Builder) (int, error) {
-			return htmlReplacer.WriteString(w, kv[0])
+			return w.WriteString(kv[0])
 		})
 	}
 
@@ -76,49 +77,22 @@ func Attr(kv ...string) NodeBuilder {
 		panic(`node.Attr: odd argument count`)
 	}
 
-	return AttrNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
-		for idx := 0; idx < len(kv); idx = idx + 2 {
-			var (
-				count int
-				err   error
-			)
-
-			count, err = htmlReplacer.WriteString(w, kv[idx])
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
-
-			count, err = w.WriteString(`=`)
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
-			count, err = w.WriteString(`"`)
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
-
-			count, err = htmlReplacer.WriteString(w, kv[idx+1])
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
-
-			count, err = w.WriteString(`"`)
-			total += count
-			if err != nil {
-				throw = err
-				return
-			}
+	for i, val := range kv {
+		if i%2 == 0 {
+			kv[i] = htmlReplacer.Replace(val) + `="`
+			continue
 		}
 
-		return
+		if i == len(kv)-1 {
+			kv[i] = htmlReplacer.Replace(val) + `"`
+		} else {
+			kv[i] = htmlReplacer.Replace(val) + `" `
+		}
+	}
+
+	kv[0] = strings.Join(kv, "")
+	return AttrNodeBuilderFunc(func(w *strings.Builder) (int, error) {
+		return w.WriteString(kv[0])
 	})
 }
 
