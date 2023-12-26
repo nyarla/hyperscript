@@ -15,34 +15,34 @@ const (
 
 type Tag string
 
-type NodeWriter interface {
+type NodeBuilder interface {
 	Type() NodeType
-	WriteNode(w *strings.Builder) (int, error)
+	BuildNode(w *strings.Builder) (int, error)
 }
 
-type TextNodeWriterFunc func(w *strings.Builder) (int, error)
+type TextNodeBuilderFunc func(w *strings.Builder) (int, error)
 
-func (f TextNodeWriterFunc) Type() NodeType { return TextNode }
-func (f TextNodeWriterFunc) WriteNode(w *strings.Builder) (int, error) {
+func (f TextNodeBuilderFunc) Type() NodeType { return TextNode }
+func (f TextNodeBuilderFunc) BuildNode(w *strings.Builder) (int, error) {
 	return f(w)
 }
 
-type AttrNodeWriterFunc func(w *strings.Builder) (int, error)
+type AttrNodeBuilderFunc func(w *strings.Builder) (int, error)
 
-func (f AttrNodeWriterFunc) Type() NodeType { return AttrNode }
-func (f AttrNodeWriterFunc) WriteNode(w *strings.Builder) (int, error) {
+func (f AttrNodeBuilderFunc) Type() NodeType { return AttrNode }
+func (f AttrNodeBuilderFunc) BuildNode(w *strings.Builder) (int, error) {
 	return f(w)
 }
 
-type ElementNodeWriterFunc func(w *strings.Builder) (int, error)
+type ElementNodeBuilderFunc func(w *strings.Builder) (int, error)
 
-func (f ElementNodeWriterFunc) Type() NodeType { return ElementNode }
-func (f ElementNodeWriterFunc) WriteNode(w *strings.Builder) (int, error) {
+func (f ElementNodeBuilderFunc) Type() NodeType { return ElementNode }
+func (f ElementNodeBuilderFunc) BuildNode(w *strings.Builder) (int, error) {
 	return f(w)
 }
 
-func Unsafe(src string) NodeWriter {
-	return TextNodeWriterFunc(func(w *strings.Builder) (int, error) {
+func Unsafe(src string) NodeBuilder {
+	return TextNodeBuilderFunc(func(w *strings.Builder) (int, error) {
 		return w.WriteString(src)
 	})
 }
@@ -58,15 +58,15 @@ var htmlReplacer = strings.NewReplacer(
 	`}`, `&#125;`,
 )
 
-func Safe(src string) NodeWriter {
-	return TextNodeWriterFunc(func(w *strings.Builder) (int, error) {
+func Safe(src string) NodeBuilder {
+	return TextNodeBuilderFunc(func(w *strings.Builder) (int, error) {
 		return htmlReplacer.WriteString(w, src)
 	})
 }
 
-func Attr(kv ...string) NodeWriter {
+func Attr(kv ...string) NodeBuilder {
 	if len(kv) == 1 {
-		return AttrNodeWriterFunc(func(w *strings.Builder) (int, error) {
+		return AttrNodeBuilderFunc(func(w *strings.Builder) (int, error) {
 			return htmlReplacer.WriteString(w, kv[0])
 		})
 	}
@@ -75,7 +75,7 @@ func Attr(kv ...string) NodeWriter {
 		panic(`node.Attr: odd argument count`)
 	}
 
-	return AttrNodeWriterFunc(func(w *strings.Builder) (total int, throw error) {
+	return AttrNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
 		for idx := 0; idx < len(kv); idx = idx + 2 {
 			var (
 				count int
@@ -121,7 +121,7 @@ func Attr(kv ...string) NodeWriter {
 	})
 }
 
-type ByNodeType []NodeWriter
+type ByNodeType []NodeBuilder
 
 func (a ByNodeType) Len() int      { return len(a) }
 func (a ByNodeType) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -133,9 +133,9 @@ func (a ByNodeType) Less(i, j int) bool {
 	return i < j
 }
 
-func Element(el Tag, contains ...NodeWriter) NodeWriter {
+func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
 	sort.Sort(ByNodeType(contains))
-	return ElementNodeWriterFunc(func(w *strings.Builder) (total int, throw error) {
+	return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
 		var (
 			count int
 			err   error
@@ -177,7 +177,7 @@ func Element(el Tag, contains ...NodeWriter) NodeWriter {
 				}
 			}
 
-			count, err = contain.WriteNode(w)
+			count, err = contain.BuildNode(w)
 			total += count
 			if err != nil {
 				throw = err
