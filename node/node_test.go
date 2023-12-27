@@ -8,16 +8,21 @@ import (
 
 func TestUnsafe(t *testing.T) {
 	var out strings.Builder
-	var component = Unsafe(`text`)
-	var expect = `text`
-
-	if _, err := component.BuildNode(&out); err != nil {
-		t.Errorf(`failed to write component string: %+v`, err)
-		return
+	var tests = []struct{ in, expect string }{
+		{`text`, `text`},
 	}
 
-	if out.String() != expect {
-		t.Errorf(`unexpected value: %+v => %+v != %+v`, `text`, out.String(), expect)
+	for _, test := range tests {
+		component := Unsafe(test.in)
+
+		if _, err := component.BuildNode(&out); err != nil {
+			t.Errorf(`failed to render node by component: %+v`, err)
+			continue
+		}
+
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: (%+v) => %+v != %+v`, test.in, out.String(), test.expect)
+		}
 	}
 }
 
