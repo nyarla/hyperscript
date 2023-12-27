@@ -28,7 +28,7 @@ func TestUnsafe(t *testing.T) {
 
 func TestSafe(t *testing.T) {
 	var out strings.Builder
-	var tests = [][2]string{
+	var tests = []struct{ expect, in string }{
 		{`&amp;`, `&`},
 		{`&gt;`, `>`},
 		{`&lt;`, `<`},
@@ -42,27 +42,22 @@ func TestSafe(t *testing.T) {
 	for _, test := range tests {
 		out.Reset()
 
-		raw := test[1]
-		escaped := test[0]
-
-		component := Safe(raw)
+		component := Safe(test.in)
 
 		if _, err := component.BuildNode(&out); err != nil {
-			t.Errorf(`failed to write component string: %+v`, err)
+			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
 
-		if out.String() != escaped {
-			t.Errorf(`unexpected value: %+v => %+v != %+v`, raw, out.String(), escaped)
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: (%+v) => %+v != %+v`, test.in, out.String(), test.expect)
 			continue
 		}
 
-		value := html.UnescapeString(escaped)
-		if value != raw {
-			t.Errorf(`escape string mismatch: %+v => %+v !=  %+v`, escaped, raw, value)
-			continue
+		unescaped := html.UnescapeString(out.String())
+		if test.in != unescaped {
+			t.Errorf(`malformed html escape: (%+v) => %+v != %+v`, test.expect, test.in, unescaped)
 		}
-
 	}
 }
 
