@@ -13,6 +13,8 @@ func TestUnsafe(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		out.Reset()
+
 		component := Unsafe(test.in)
 
 		if _, err := component.BuildNode(&out); err != nil {
