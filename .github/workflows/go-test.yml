@@ -1,0 +1,27 @@
+---
+name: Tests for hyperscript
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/go-test.yml"
+      - "go.mod"
+      - "**/*.go"
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # runner environment
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      # test environment
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version: '1.21.5'
+
+      # running test
+      - run: go test -v ./...
