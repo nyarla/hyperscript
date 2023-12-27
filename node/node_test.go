@@ -118,29 +118,34 @@ func TestAttr(t *testing.T) {
 func TestElement(t *testing.T) {
 	var out strings.Builder
 	var tests = []struct {
-		el     NodeBuilder
-		expect string
+		component NodeBuilder
+		expect    string
 	}{
+		// only tag
 		{Element(`hr`), `<hr />`},
-		{Element(`hr`, Attr(`id`, `msg`)), `<hr id="msg" />`},
-		{Element(`hr`, Attr(`id`, `msg`), Attr(`class`, `hr`)), `<hr class="hr" id="msg" />`},
-		{Element(`p`, Safe(`hello`), Safe(`, `), Safe(`world!`)), `<p>hello, world!</p>`},
-		{Element(`p`, Attr(`id`, `msg`), Attr(`class`, `highlight`), Safe(`hello`), Safe(`, `), Safe(`world!`)), `<p class="highlight" id="msg">hello, world!</p>`},
-		{Element(`p`, Element(`strong`, Safe(`hi,`))), `<p><strong>hi,</strong></p>`},
+
+		// tag with attrs
+		{Element(`hr`, Attr(`id`, `sep`)), `<hr id="sep" />`},
+		{Element(`hr`, Attr(`id`, `sep`, `class`, `mark`), Attr(`data-bind`, `foo`)), `<hr data-bind="foo" id="sep" class="mark" />`},
+
+		// tag with contents
+		{Element(`p`, Unsafe(`hello `), Element(`strong`, Unsafe(`nyarla`))), `<p>hello <strong>nyarla</strong></p>`},
+		{Element(`p`, Element(`mark`, Unsafe(`hello`)), Unsafe(` `), Element(`strong`, Unsafe(`nyarla`))), `<p><mark>hello</mark> <strong>nyarla</strong></p>`},
+
+		// tag with attrs and contents
+		{Element(`p`, Attr(`id`, `msg`), Unsafe(`hello `), Element(`strong`, Unsafe(`nyarla`))), `<p id="msg">hello <strong>nyarla</strong></p>`},
 	}
 
 	for _, test := range tests {
 		out.Reset()
-		el := test.el
-		expect := test.expect
 
-		if _, err := el.BuildNode(&out); err != nil {
-			t.Errorf(`failed to write component string: %+v`, err)
+		if _, err := test.component.BuildNode(&out); err != nil {
+			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
 
-		if out.String() != expect {
-			t.Errorf(`unexpected value: %+v != %+v`, out.String(), expect)
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: %+v != %+v`, out.String(), test.expect)
 		}
 	}
 }
