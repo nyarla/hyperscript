@@ -66,7 +66,7 @@ func TestSafe(t *testing.T) {
 func TestAttr(t *testing.T) {
 	var out strings.Builder
 
-	var single = [][2]string{
+	var single = []struct{ in, expect string }{
 		{`crossorigin`, `crossorigin`},
 		{`cross&origin`, `cross&amp;origin`},
 	}
@@ -74,49 +74,45 @@ func TestAttr(t *testing.T) {
 	for _, test := range single {
 		out.Reset()
 
-		from := test[0]
-		to := test[1]
+		component := Attr(test.in)
 
-		component := Attr(from)
-
-		_, err := component.BuildNode(&out)
-		if err != nil {
-			t.Errorf(`failed to write component string: %+v`, err)
+		if _, err := component.BuildNode(&out); err != nil {
+			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
 
-		if out.String() != to {
-			t.Errorf(`unexpected value: %+v => %+v != %+v`, from, out.String(), to)
-			continue
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: (%+v) => %+v != %+v`, test.in, out.String(), test.expect)
 		}
 	}
 
-	var pairs = [][3]string{
-		{`id`, `msg`, `id="msg"`},
-		{`i&d`, `msg`, `i&amp;d="msg"`},
-		{`id`, `m&g`, `id="m&amp;g"`},
-		{`i&d`, `m&g`, `i&amp;d="m&amp;g"`},
+	var multiple = []struct {
+		in     []string
+		expect string
+	}{
+		{[]string{`id`, `msg`}, `id="msg"`},
+		{[]string{`id`, `m&g`}, `id="m&amp;g"`},
+		{[]string{`i&d`, `msg`}, `i&amp;d="msg"`},
+		{[]string{`i&d`, `m&g`}, `i&amp;d="m&amp;g"`},
+
+		{[]string{`id`, `msg`, `class`, `highlight`}, `id="msg" class="highlight"`},
 	}
 
-	for _, test := range pairs {
+	for _, test := range multiple {
 		out.Reset()
 
-		k := test[0]
-		v := test[1]
-		expect := test[2]
+		component := Attr(test.in...)
 
-		component := Attr(k, v)
-		_, err := component.BuildNode(&out)
-		if err != nil {
-			t.Errorf(`failed to write component string: %+v`, err)
+		if _, err := component.BuildNode(&out); err != nil {
+			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
 
-		if out.String() != expect {
-			t.Errorf(`unexpected value: (%+v, %+v) => %+v != %+v`, k, v, out.String(), expect)
-			continue
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: (%+v) => %+v != %+v`, test.in, out.String(), test.expect)
 		}
 	}
+
 }
 
 func TestElement(t *testing.T) {
