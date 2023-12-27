@@ -187,7 +187,7 @@ func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
 	}
 
 	// element has one content
-	if len(contains) == 1 && contains[0].Type() == TextNode || contains[0].Type() == ElementNode {
+	if len(contains) == 1 && (contains[0].Type() == TextNode || contains[0].Type() == ElementNode) {
 		return ElementNodeBuilderFunc(func(w *strings.Builder) (total int, throw error) {
 			var (
 				count int

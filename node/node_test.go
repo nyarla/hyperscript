@@ -8,22 +8,29 @@ import (
 
 func TestUnsafe(t *testing.T) {
 	var out strings.Builder
-	var component = Unsafe(`text`)
-	var expect = `text`
-
-	if _, err := component.BuildNode(&out); err != nil {
-		t.Errorf(`failed to write component string: %+v`, err)
-		return
+	var tests = []struct{ in, expect string }{
+		{`text`, `text`},
 	}
 
-	if out.String() != expect {
-		t.Errorf(`unexpected value: %+v => %+v != %+v`, `text`, out.String(), expect)
+	for _, test := range tests {
+		out.Reset()
+
+		component := Unsafe(test.in)
+
+		if _, err := component.BuildNode(&out); err != nil {
+			t.Errorf(`failed to render node by component: %+v`, err)
+			continue
+		}
+
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: (%+v) => %+v != %+v`, test.in, out.String(), test.expect)
+		}
 	}
 }
 
 func TestSafe(t *testing.T) {
 	var out strings.Builder
-	var tests = [][2]string{
+	var tests = []struct{ expect, in string }{
 		{`&amp;`, `&`},
 		{`&gt;`, `>`},
 		{`&lt;`, `<`},
@@ -37,34 +44,29 @@ func TestSafe(t *testing.T) {
 	for _, test := range tests {
 		out.Reset()
 
-		raw := test[1]
-		escaped := test[0]
-
-		component := Safe(raw)
+		component := Safe(test.in)
 
 		if _, err := component.BuildNode(&out); err != nil {
-			t.Errorf(`failed to write component string: %+v`, err)
+			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
 
-		if out.String() != escaped {
-			t.Errorf(`unexpected value: %+v => %+v != %+v`, raw, out.String(), escaped)
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: (%+v) => %+v != %+v`, test.in, out.String(), test.expect)
 			continue
 		}
 
-		value := html.UnescapeString(escaped)
-		if value != raw {
-			t.Errorf(`escape string mismatch: %+v => %+v !=  %+v`, escaped, raw, value)
-			continue
+		unescaped := html.UnescapeString(out.String())
+		if test.in != unescaped {
+			t.Errorf(`malformed html escape: (%+v) => %+v != %+v`, test.expect, test.in, unescaped)
 		}
-
 	}
 }
 
 func TestAttr(t *testing.T) {
 	var out strings.Builder
 
-	var single = [][2]string{
+	var single = []struct{ in, expect string }{
 		{`crossorigin`, `crossorigin`},
 		{`cross&origin`, `cross&amp;origin`},
 	}
@@ -72,77 +74,78 @@ func TestAttr(t *testing.T) {
 	for _, test := range single {
 		out.Reset()
 
-		from := test[0]
-		to := test[1]
+		component := Attr(test.in)
 
-		component := Attr(from)
-
-		_, err := component.BuildNode(&out)
-		if err != nil {
-			t.Errorf(`failed to write component string: %+v`, err)
+		if _, err := component.BuildNode(&out); err != nil {
+			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
 
-		if out.String() != to {
-			t.Errorf(`unexpected value: %+v => %+v != %+v`, from, out.String(), to)
-			continue
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: (%+v) => %+v != %+v`, test.in, out.String(), test.expect)
 		}
 	}
 
-	var pairs = [][3]string{
-		{`id`, `msg`, `id="msg"`},
-		{`i&d`, `msg`, `i&amp;d="msg"`},
-		{`id`, `m&g`, `id="m&amp;g"`},
-		{`i&d`, `m&g`, `i&amp;d="m&amp;g"`},
+	var multiple = []struct {
+		in     []string
+		expect string
+	}{
+		{[]string{`id`, `msg`}, `id="msg"`},
+		{[]string{`id`, `m&g`}, `id="m&amp;g"`},
+		{[]string{`i&d`, `msg`}, `i&amp;d="msg"`},
+		{[]string{`i&d`, `m&g`}, `i&amp;d="m&amp;g"`},
+
+		{[]string{`id`, `msg`, `class`, `highlight`}, `id="msg" class="highlight"`},
 	}
 
-	for _, test := range pairs {
+	for _, test := range multiple {
 		out.Reset()
 
-		k := test[0]
-		v := test[1]
-		expect := test[2]
+		component := Attr(test.in...)
 
-		component := Attr(k, v)
-		_, err := component.BuildNode(&out)
-		if err != nil {
-			t.Errorf(`failed to write component string: %+v`, err)
+		if _, err := component.BuildNode(&out); err != nil {
+			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
 
-		if out.String() != expect {
-			t.Errorf(`unexpected value: (%+v, %+v) => %+v != %+v`, k, v, out.String(), expect)
-			continue
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: (%+v) => %+v != %+v`, test.in, out.String(), test.expect)
 		}
 	}
+
 }
 
 func TestElement(t *testing.T) {
 	var out strings.Builder
 	var tests = []struct {
-		el     NodeBuilder
-		expect string
+		component NodeBuilder
+		expect    string
 	}{
+		// only tag
 		{Element(`hr`), `<hr />`},
-		{Element(`hr`, Attr(`id`, `msg`)), `<hr id="msg" />`},
-		{Element(`hr`, Attr(`id`, `msg`), Attr(`class`, `hr`)), `<hr class="hr" id="msg" />`},
-		{Element(`p`, Safe(`hello`), Safe(`, `), Safe(`world!`)), `<p>hello, world!</p>`},
-		{Element(`p`, Attr(`id`, `msg`), Attr(`class`, `highlight`), Safe(`hello`), Safe(`, `), Safe(`world!`)), `<p class="highlight" id="msg">hello, world!</p>`},
-		{Element(`p`, Element(`strong`, Safe(`hi,`))), `<p><strong>hi,</strong></p>`},
+
+		// tag with attrs
+		{Element(`hr`, Attr(`id`, `sep`)), `<hr id="sep" />`},
+		{Element(`hr`, Attr(`id`, `sep`, `class`, `mark`), Attr(`data-bind`, `foo`)), `<hr data-bind="foo" id="sep" class="mark" />`},
+
+		// tag with contents
+		{Element(`p`, Unsafe(`hello `), Element(`strong`, Unsafe(`nyarla`))), `<p>hello <strong>nyarla</strong></p>`},
+		{Element(`p`, Element(`mark`, Unsafe(`hello`)), Unsafe(` `), Element(`strong`, Unsafe(`nyarla`))), `<p><mark>hello</mark> <strong>nyarla</strong></p>`},
+
+		// tag with attrs and contents
+		{Element(`p`, Attr(`id`, `msg`), Unsafe(`hello `), Element(`strong`, Unsafe(`nyarla`))), `<p id="msg">hello <strong>nyarla</strong></p>`},
 	}
 
 	for _, test := range tests {
 		out.Reset()
-		el := test.el
-		expect := test.expect
 
-		if _, err := el.BuildNode(&out); err != nil {
-			t.Errorf(`failed to write component string: %+v`, err)
+		if _, err := test.component.BuildNode(&out); err != nil {
+			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
 
-		if out.String() != expect {
-			t.Errorf(`unexpected value: %+v != %+v`, out.String(), expect)
+		if out.String() != test.expect {
+			t.Errorf(`unexpected value: %+v != %+v`, out.String(), test.expect)
 		}
 	}
 }
