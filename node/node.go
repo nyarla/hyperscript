@@ -1,6 +1,7 @@
 package node
 
 import (
+	"io"
 	"sort"
 	"strings"
 )
@@ -17,7 +18,7 @@ type Tag string
 
 type NodeBuilder interface {
 	Type() NodeType
-	BuildNode(w *strings.Builder) (int, error)
+	WriteString(w io.StringWriter) (int, error)
 }
 
 type node struct {
@@ -29,7 +30,7 @@ func (n *node) Type() NodeType {
 	return n.kind
 }
 
-func (n *node) BuildNode(w *strings.Builder) (int, error) {
+func (n *node) WriteString(w io.StringWriter) (int, error) {
 	return w.WriteString(n.src.String())
 }
 
@@ -113,7 +114,7 @@ func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
 
 	if len(contains) == 1 && contains[0].Type() == AttrNode {
 		n.src.WriteString(` `)
-		contains[0].BuildNode(&n.src)
+		contains[0].WriteString(&n.src)
 		n.src.WriteString(` />`)
 
 		return n
@@ -122,7 +123,7 @@ func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
 	if len(contains) == 1 && contains[0].Type() == TextNode {
 		n.src.WriteString(`>`)
 
-		contains[0].BuildNode(&n.src)
+		contains[0].WriteString(&n.src)
 
 		n.src.WriteString(`</`)
 		n.src.WriteString(string(el))
@@ -136,7 +137,7 @@ func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
 	if first.Type() == AttrNode && first.Type() == last.Type() {
 		n.src.WriteString(` `)
 		for idx := 0; idx < len(contains); idx++ {
-			contains[idx].BuildNode(&n.src)
+			contains[idx].WriteString(&n.src)
 			n.src.WriteString(` `)
 		}
 
@@ -149,7 +150,7 @@ func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
 		n.src.WriteString(`>`)
 
 		for idx := 0; idx < len(contains); idx++ {
-			contains[idx].BuildNode(&n.src)
+			contains[idx].WriteString(&n.src)
 		}
 
 		n.src.WriteString(`</`)
@@ -168,7 +169,7 @@ func Element(el Tag, contains ...NodeBuilder) NodeBuilder {
 			n.src.WriteString(`>`)
 		}
 
-		contains[idx].BuildNode(&n.src)
+		contains[idx].WriteString(&n.src)
 	}
 
 	n.src.WriteString(`</`)
