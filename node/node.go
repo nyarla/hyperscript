@@ -19,6 +19,7 @@ type Tag string
 type NodeBuilder interface {
 	Type() NodeType
 	WriteString(w io.StringWriter) (int, error)
+	String() string
 }
 
 type node struct {
@@ -32,6 +33,10 @@ func (n *node) Type() NodeType {
 
 func (n *node) WriteString(w io.StringWriter) (int, error) {
 	return w.WriteString(n.src.String())
+}
+
+func (n *node) String() string {
+	return n.src.String()
 }
 
 var htmlReplacer = strings.NewReplacer(
