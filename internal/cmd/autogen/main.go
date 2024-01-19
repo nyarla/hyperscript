@@ -26,7 +26,7 @@ type dataSet struct {
 func init() {
 	flag.BoolVar(&help, `h`, false, `show help`)
 	flag.BoolVar(&help, `help`, false, `show help`)
-	flag.StringVar(&kind, `kind`, `tag`, `the kind of output from lang: [tags|attrs]`)
+	flag.StringVar(&kind, `kind`, `tags`, `the kind of output from lang: [tags|attrs]`)
 	flag.StringVar(&lang, `lang`, `html`, `the markup langauge: [html]`)
 	flag.StringVar(&out, `out`, ``, `output path to auto-genereated code`)
 
