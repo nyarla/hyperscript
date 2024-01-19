@@ -6,6 +6,17 @@ import (
 	"testing"
 )
 
+func TestNode(t *testing.T) {
+	var out strings.Builder
+	var text = Unsafe(`test`)
+
+	text.WriteString(&out)
+
+	if out.String() != text.String() {
+		t.Errorf(`unexpected value: %+v != %+v`, out.String(), text.String())
+	}
+}
+
 func TestUnsafe(t *testing.T) {
 	var out strings.Builder
 	var tests = []struct{ in, expect string }{
