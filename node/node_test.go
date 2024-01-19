@@ -17,7 +17,7 @@ func TestUnsafe(t *testing.T) {
 
 		component := Unsafe(test.in)
 
-		if _, err := component.BuildNode(&out); err != nil {
+		if _, err := component.WriteString(&out); err != nil {
 			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
@@ -46,7 +46,7 @@ func TestSafe(t *testing.T) {
 
 		component := Safe(test.in)
 
-		if _, err := component.BuildNode(&out); err != nil {
+		if _, err := component.WriteString(&out); err != nil {
 			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
@@ -76,7 +76,7 @@ func TestAttr(t *testing.T) {
 
 		component := Attr(test.in)
 
-		if _, err := component.BuildNode(&out); err != nil {
+		if _, err := component.WriteString(&out); err != nil {
 			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
@@ -103,7 +103,7 @@ func TestAttr(t *testing.T) {
 
 		component := Attr(test.in...)
 
-		if _, err := component.BuildNode(&out); err != nil {
+		if _, err := component.WriteString(&out); err != nil {
 			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
@@ -139,7 +139,7 @@ func TestElement(t *testing.T) {
 	for _, test := range tests {
 		out.Reset()
 
-		if _, err := test.component.BuildNode(&out); err != nil {
+		if _, err := test.component.WriteString(&out); err != nil {
 			t.Errorf(`failed to render node by component: %+v`, err)
 			continue
 		}
@@ -158,7 +158,7 @@ func BenchmarkUnsafe(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		component.BuildNode(&out)
+		component.WriteString(&out)
 	}
 }
 
@@ -170,7 +170,7 @@ func BenchmarkSafe(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		component.BuildNode(&out)
+		component.WriteString(&out)
 	}
 }
 
@@ -183,8 +183,8 @@ func BenchmarkAttr(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		single.BuildNode(&out)
-		pair.BuildNode(&out)
+		single.WriteString(&out)
+		pair.WriteString(&out)
 	}
 }
 
@@ -196,7 +196,7 @@ func BenchmarkElement(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		p.BuildNode(&out)
+		p.WriteString(&out)
 	}
 }
 
@@ -216,6 +216,6 @@ func BenchmarkRealCase(b *testing.B) {
 	b.ResetTimer()
 
 	for idx := 0; idx < b.N; idx++ {
-		t.BuildNode(&out)
+		t.WriteString(&out)
 	}
 }
