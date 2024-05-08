@@ -1,6 +1,9 @@
 package node
 
-import "strings"
+import (
+	"io"
+	"strings"
+)
 
 var escape = strings.NewReplacer(
 	"&", `&amp;`,
@@ -12,3 +15,11 @@ var escape = strings.NewReplacer(
 	"{", `&#123;`,
 	"}", `&#125;`,
 )
+
+func Escape(w io.Writer, s string) error {
+	if _, err := escape.WriteString(w, s); err != nil {
+		return err
+	}
+
+	return nil
+}
