@@ -10,7 +10,7 @@ type Renderer interface {
 type NodeType int
 
 const (
-	UnkwonNode NodeType = iota
+	UnknownNode NodeType = iota
 	TextNode
 	AttrNode
 	ElementNode
@@ -27,7 +27,7 @@ func (t NodeType) String() string {
 		return `ElementNode`
 	}
 
-	return `UnkownNode`
+	return `UnknownNode`
 }
 
 type Node interface {
